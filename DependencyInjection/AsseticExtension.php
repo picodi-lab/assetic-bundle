@@ -13,8 +13,8 @@ namespace Symfony\Bundle\AsseticBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\DefinitionDecorator;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
@@ -36,6 +36,7 @@ class AsseticExtension extends Extension
     {
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('assetic.xml');
+        $loader->load('commands.xml');
         $loader->load('templating_twig.xml');
         $loader->load('templating_php.xml');
 
@@ -100,7 +101,11 @@ class AsseticExtension extends Extension
                 }
 
                 foreach ($filter['apply_to'] as $i => $pattern) {
-                    $worker = new DefinitionDecorator('assetic.worker.ensure_filter');
+                    if (class_exists('Symfony\Component\DependencyInjection\DefinitionDecorator')) {
+                        $worker = new \Symfony\Component\DependencyInjection\DefinitionDecorator('assetic.worker.ensure_filter');
+                    } else {
+                        $worker = new ChildDefinition('assetic.worker.ensure_filter');
+                    }
                     $worker->replaceArgument(0, '/'.$pattern.'/');
                     $worker->replaceArgument(1, new Reference('assetic.filter.'.$name));
                     $worker->addTag('assetic.factory_worker');
